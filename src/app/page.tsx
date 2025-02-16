@@ -1,101 +1,141 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react';
+import { Clock, Zap } from 'lucide-react';
+import { UsageChart } from './components/UsageChart';
+import { UsageTable } from './components/UsageTable';
+import {invoke} from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+
+interface AppUsage {
+  name: string;
+  total_time: number;
+  last_active: number;
+}
+
+type FormattedUsage = {
+  name: string;
+  minutes: number;
+  hours: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [appUsage, setAppUsage] = useState<FormattedUsage[]>([]);
+  const [activeTab, setActiveTab] = useState<'chart' | 'table'>('chart');
+  const [status, setStatus] = useState<string>('正在加载数据...');
+  const [debug, setDebug] = useState<string[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // 获取初始数据
+        setDebug(prev => [...prev, '正在获取初始数据...']);
+        const data = await invoke<Record<string, AppUsage>>('get_app_usage');
+        setAppUsage(formatUsageData(data));
+        setDebug(prev => [...prev, '初始数据获取成功']);
+
+        // 设置监听器
+        setDebug(prev => [...prev, '正在设置数据更新监听器...']);
+        const unlisten = await listen<Record<string, AppUsage>>('usage_updated', (event) => {
+          const formattedData = formatUsageData(event.payload);
+          setAppUsage(formattedData);
+          setDebug(prev => [...prev, '收到数据更新']);
+        });
+        setDebug(prev => [...prev, '监听器设置成功']);
+
+        setStatus('ready');
+
+        return () => {
+          unlisten();
+          setDebug(prev => [...prev, '清理监听器']);
+        };
+      } catch (error) {
+        const errorMessage = `加载失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        setStatus(errorMessage);
+        setDebug(prev => [...prev, `错误: ${errorMessage}`]);
+        console.error('初始化错误:', error);
+      }
+    };
+
+    init();
+  }, []);
+
+  const formatUsageData = (data: Record<string, AppUsage>): FormattedUsage[] => {
+    return Object.values(data)
+      .map(app => ({
+        name: app.name,
+        minutes: Math.round(app.total_time / 60),
+        hours: (app.total_time / 3600).toFixed(1),
+      }))
+      .sort((a, b) => b.minutes - a.minutes);
+  };
+
+  if (status !== 'ready') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-lg w-full p-6">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              {status}
+            </h1>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          </div>
+          
+          {/* 调试信息区域 */}
+          <div className="mt-8 bg-gray-100 rounded-lg p-4">
+            <h2 className="text-sm font-semibold text-gray-700 mb-2">调试信息:</h2>
+            <div className="text-xs text-gray-600 h-48 overflow-auto">
+              {debug.map((msg, index) => (
+                <div key={index} className="mb-1">{msg}</div>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-900">软件使用时长统计</h1>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setActiveTab('chart')}
+                className={`px-4 py-2 rounded-lg ${
+                  activeTab === 'chart' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <Zap className="inline-block mr-2 h-4 w-4" />
+                图表视图
+              </button>
+              <button
+                onClick={() => setActiveTab('table')}
+                className={`px-4 py-2 rounded-lg ${
+                  activeTab === 'table' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <Clock className="inline-block mr-2 h-4 w-4" />
+                详细数据
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {activeTab === 'chart' ? (
+          <UsageChart data={appUsage} />
+        ) : (
+          <UsageTable data={appUsage} />
+        )}
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
