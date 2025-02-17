@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "time-whisper",
+        "title": "Time Whisper",
         "width": 1200,
         "height": 800,
         "resizable": true,

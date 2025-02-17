@@ -2,22 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, Zap } from 'lucide-react';
-import { UsageChart } from './components/UsageChart';
-import { UsageTable } from './components/UsageTable';
-import {invoke} from '@tauri-apps/api/core';
+import { UsageChart } from '../components/dashboard/UsageChart';
+import { UsageTable } from '../components/dashboard/UsageTable';
+import AutoStartSetting from '../components/dashboard/AutoStart';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import AutoStartSetting from './components/AutoStart';
+import { formatProcessName } from '../lib/processName';
 
 interface AppUsage {
   name: string;
   total_time: number;
   last_active: number;
+  process_name?: string;
 }
 
 type FormattedUsage = {
   name: string;
   minutes: number;
   hours: string;
+  processName: string;
 }
 
 export default function Home() {
@@ -25,6 +28,20 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'chart' | 'table'>('chart');
   const [status, setStatus] = useState<string>('正在加载数据...');
   const [debug, setDebug] = useState<string[]>([]);
+
+  const formatUsageData = (data: Record<string, AppUsage>): FormattedUsage[] => {
+    return Object.entries(data)
+      .map(([key, app]) => {
+        const processName = app.process_name || key;
+        return {
+          name: formatProcessName(processName),
+          minutes: Math.round(app.total_time / 60),
+          hours: (app.total_time / 3600).toFixed(1),
+          processName: processName
+        };
+      })
+      .sort((a, b) => b.minutes - a.minutes);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -58,16 +75,6 @@ export default function Home() {
 
     init();
   }, []);
-
-  const formatUsageData = (data: Record<string, AppUsage>): FormattedUsage[] => {
-    return Object.values(data)
-      .map(app => ({
-        name: app.name,
-        minutes: Math.round(app.total_time / 60),
-        hours: (app.total_time / 3600).toFixed(1),
-      }))
-      .sort((a, b) => b.minutes - a.minutes);
-  };
 
   if (status !== 'ready') {
     return (

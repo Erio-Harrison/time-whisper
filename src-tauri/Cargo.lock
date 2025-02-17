@@ -63,27 +63,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
-name = "app"
-version = "0.1.0"
-dependencies = [
- "core-foundation 0.9.4",
- "core-graphics 0.22.3",
- "dirs 4.0.0",
- "log",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-shell",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "windows 0.48.0",
- "winreg 0.10.1",
- "x11rb",
-]
-
-[[package]]
 name = "atk"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3884,6 +3863,27 @@ checksum = "2834e6017e3e5e4b9834939793b282bc03b37a3336245fa820e35e233e2a85de"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "time-whisper"
+version = "0.1.0"
+dependencies = [
+ "core-foundation 0.9.4",
+ "core-graphics 0.22.3",
+ "dirs 4.0.0",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-shell",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "windows 0.48.0",
+ "winreg 0.10.1",
+ "x11rb",
 ]
 
 [[package]]
