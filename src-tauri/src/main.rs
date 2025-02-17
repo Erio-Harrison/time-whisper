@@ -1,5 +1,7 @@
 mod platform;
 
+use platform::windows::Windows;
+use platform::AutoStart;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -31,6 +33,30 @@ async fn get_app_usage(state: tauri::State<'_, AppState>) -> Result<HashMap<Stri
         .lock()
         .map(|data: std::sync::MutexGuard<'_, HashMap<String, AppUsage>>| data.clone())
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn toggle_auto_start(enable: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    let platform = Windows;
+    #[cfg(target_os = "macos")]
+    let platform = MacOS;
+    #[cfg(target_os = "linux")]
+    let platform = Linux;
+    
+    platform.set_auto_start(enable)
+}
+
+#[tauri::command]
+async fn get_auto_start_status() -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    let platform = Windows;
+    #[cfg(target_os = "macos")]
+    let platform = MacOS;
+    #[cfg(target_os = "linux")]
+    let platform = Linux;
+    
+    platform.is_auto_start_enabled()
 }
 
 async fn monitor_active_window(handle: tauri::AppHandle) {
@@ -92,7 +118,11 @@ fn main() {
 
     let result = tauri::Builder::default()
         .manage(app_state)
-        .invoke_handler(tauri::generate_handler![get_app_usage])
+        .invoke_handler(tauri::generate_handler![
+            get_app_usage,
+            toggle_auto_start,
+            get_auto_start_status
+            ])
         .setup(|app| {
             let handle = app.handle().clone();
             // 启动监控任务

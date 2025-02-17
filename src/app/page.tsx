@@ -6,6 +6,7 @@ import { UsageChart } from './components/UsageChart';
 import { UsageTable } from './components/UsageTable';
 import {invoke} from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import AutoStartSetting from './components/AutoStart';
 
 interface AppUsage {
   name: string;
@@ -28,21 +29,19 @@ export default function Home() {
   useEffect(() => {
     const init = async () => {
       try {
-        // 获取初始数据
         setDebug(prev => [...prev, '正在获取初始数据...']);
         const data = await invoke<Record<string, AppUsage>>('get_app_usage');
         setAppUsage(formatUsageData(data));
         setDebug(prev => [...prev, '初始数据获取成功']);
 
-        // 设置监听器
         setDebug(prev => [...prev, '正在设置数据更新监听器...']);
         const unlisten = await listen<Record<string, AppUsage>>('usage_updated', (event) => {
           const formattedData = formatUsageData(event.payload);
           setAppUsage(formattedData);
           setDebug(prev => [...prev, '收到数据更新']);
         });
+        
         setDebug(prev => [...prev, '监听器设置成功']);
-
         setStatus('ready');
 
         return () => {
@@ -75,13 +74,10 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-lg w-full p-6">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              {status}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{status}</h1>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
           </div>
           
-          {/* 调试信息区域 */}
           <div className="mt-8 bg-gray-100 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-2">调试信息:</h2>
             <div className="text-xs text-gray-600 h-48 overflow-auto">
@@ -129,12 +125,22 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'chart' ? (
-          <UsageChart data={appUsage} />
-        ) : (
-          <UsageTable data={appUsage} />
-        )}
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <AutoStartSetting />
+        
+        <div className="bg-white rounded-lg shadow p-6">
+          {appUsage.length > 0 ? (
+            activeTab === 'chart' ? (
+              <UsageChart data={appUsage} />
+            ) : (
+              <UsageTable data={appUsage} />
+            )
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              暂无使用数据
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

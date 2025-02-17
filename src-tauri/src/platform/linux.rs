@@ -4,7 +4,9 @@ mod linux {
     use x11rb::connection::Connection;
     use x11rb::protocol::xproto::*;
     use std::process::Command;
+    use std::path::PathBuf;
 
+    pub struct Linux;
     pub struct LinuxMonitor;
 
     impl LinuxMonitor {

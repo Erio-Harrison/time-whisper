@@ -23,3 +23,8 @@ pub fn create_window_monitor() -> Box<dyn WindowInfo> {
         Box::new(linux::LinuxMonitor::new())
     }
 }
+
+pub trait AutoStart {
+    fn set_auto_start(&self, enable: bool) -> Result<(), String>;
+    fn is_auto_start_enabled(&self) -> Result<bool, String>;
+}
