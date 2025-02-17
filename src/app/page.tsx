@@ -140,7 +140,7 @@ export default function Home() {
             activeTab === 'chart' ? (
               <UsageChart data={appUsage} />
             ) : (
-              <UsageTable data={appUsage} />
+              <UsageTable />
             )
           ) : (
             <div className="text-center py-12 text-gray-500">
