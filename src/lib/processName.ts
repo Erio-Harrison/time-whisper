@@ -42,6 +42,8 @@ const APP_NAMES: Record<string, string> = {
   'zoom': 'Zoom',
   'teams': 'Microsoft Teams',
   'msteams': 'Microsoft Teams',
+  'line': 'LINE',
+  'kakaotalk': 'KakaoTalk',
 
   // 开发工具
   'idea64': 'IntelliJ IDEA',
@@ -72,6 +74,9 @@ const APP_NAMES: Record<string, string> = {
   'nvim': 'Neovim',
   'emacs': 'Emacs',
   'xemacs': 'XEmacs',
+  'heroku': 'Heroku CLI',
+  'aws': 'AWS CLI',
+  'docker': 'Docker',
 
   // 浏览器
   'firefox': 'Firefox',
@@ -84,6 +89,8 @@ const APP_NAMES: Record<string, string> = {
   'maxthon': '遨游浏览器',
   '360se': '360 安全浏览器',
   'qqbrowser': 'QQ浏览器',
+  'ucbrowser': 'UC浏览器',
+  'yandexbrowser': 'Yandex浏览器',
 
   // 办公软件
   'winword': 'Microsoft Word',
@@ -110,6 +117,8 @@ const APP_NAMES: Record<string, string> = {
   'typora': 'Typora',
   'obsidian': 'Obsidian',
   'notion': 'Notion',
+  'libreoffice': 'LibreOffice',
+  'onlyoffice': 'ONLYOFFICE',
 
   // 媒体工具
   'potplayer': 'PotPlayer',
@@ -131,6 +140,22 @@ const APP_NAMES: Record<string, string> = {
   'blender': 'Blender',
   'obs': 'OBS Studio',
   'obs64': 'OBS Studio',
+  'audacity': 'Audacity',
+  'shotcut': 'Shotcut',
+  'figma': 'Figma',
+  'canva': 'Canva',
+  'kuwo': '酷我音乐',
+  'kugou': '酷狗音乐',
+  'musicbed': 'MusicBed',
+  'amazonmusic': 'Amazon Music',
+  'deezer': 'Deezer',
+  'tidal': 'Tidal',
+  'pandora': 'Pandora',
+  'iheartradio': 'iHeartRadio',
+  'jrivermediacenter': 'J River Media Center',
+  'mediaplayerclassic': 'Media Player Classic',
+  'kmplayer': 'KMPlayer',
+  'realplayer': 'RealPlayer',
 
   // 实用工具
   '7zfm': '7-Zip',
@@ -150,6 +175,9 @@ const APP_NAMES: Record<string, string> = {
   'nox': '夜神模拟器',
   'virtualbox': 'VirtualBox',
   'vmware': 'VMware',
+  'rufus': 'Rufus',
+  'bitwarden': 'Bitwarden',
+  '1password': '1Password',
 
   // macOS 应用
   'finder': 'Finder',
@@ -163,6 +191,8 @@ const APP_NAMES: Record<string, string> = {
   'numbers': 'Numbers',
   'keynote': 'Keynote',
   'xcode': 'Xcode',
+  'mail': '邮件',
+  'messages': '信息',
 
   // Linux 应用
   'gnome-terminal': '终端',
@@ -176,29 +206,31 @@ const APP_NAMES: Record<string, string> = {
   'kwrite': 'KWrite',
   'okular': 'Okular',
   'gwenview': 'Gwenview',
+  'thunar': 'Thunar 文件管理器',
+  'lxterminal': 'LXTerminal',
 };
-  
-  export const formatProcessName = (processName: string): string => {
-    // 清理进程名，移除常见的后缀和路径
-    let name = processName.toLowerCase()
-      .replace(/\.exe$/i, '') // Windows
-      .replace(/\.app$/i, '') // macOS
-      .replace(/^\/.*\//g, '') // Unix-like paths
-      .split('/').pop() || '';
-  
-    // 尝试从映射中获取应用名
-    if (APP_NAMES[name]) {
-      return APP_NAMES[name];
-    }
-  
-    // 对于 macOS 的 .app bundles，美化处理
-    if (name.endsWith('.app')) {
-      name = name.slice(0, -4);
-    }
-  
-    // 对于未知应用，美化进程名
-    return name
-      .split(/[_\-\s]+/) // 按常见分隔符分割
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // 首字母大写
-      .join(' '); // 用空格连接
-  };
+
+export const formatProcessName = (processName: string): string => {
+  // 清理进程名，移除常见的后缀和路径
+  let name = processName.toLowerCase()
+    .replace(/\.exe$/i, '') // Windows
+    .replace(/\.app$/i, '') // macOS
+    .replace(/^\/.*\//g, '') // Unix-like paths
+    .split('/').pop() || '';
+
+  // 尝试从映射中获取应用名
+  if (APP_NAMES[name]) {
+    return APP_NAMES[name];
+  }
+
+  // 对于 macOS 的 .app bundles，美化处理
+  if (name.endsWith('.app')) {
+    name = name.slice(0, -4);
+  }
+
+  // 对于未知应用，美化进程名
+  return name
+    .split(/[_\-\s]+/) // 按常见分隔符分割
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // 首字母大写
+    .join(' '); // 用空格连接
+};

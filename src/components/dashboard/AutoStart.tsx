@@ -34,9 +34,9 @@ const AutoStartSetting = () => {
           <Power className={`h-5 w-5 transition-colors ${enabled ? 'text-blue-600' : 'text-gray-400'}`} />
         </div>
         <div>
-          <h3 className="text-lg font-medium">开机自启动</h3>
+          <h3 className="text-lg font-medium">开机自动开启</h3>
           <p className="text-sm text-gray-500">
-            {enabled ? '已开启开机自启动' : '已关闭开机自启动'}
+            {enabled ? '已开启开机自动开启' : '已关闭开机自动开启'}
           </p>
         </div>
       </div>
