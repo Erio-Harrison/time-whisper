@@ -1,36 +1,156 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TimeWhisper
 
-## Getting Started
+[![My Skills](https://skillicons.dev/icons?i=rust,tauri,ts,react,sqlite)](https://skillicons.dev)
 
-First, run the development server:
+An elegant application usage time tracking tool.
+
+TimeWhisper helps you understand your application usage habits by providing clear data visualization of your software usage time, supporting statistical analysis across multiple time dimensions.
+
+## ✨ Features
+
+- 🕒 Real-time application usage monitoring
+- 📊 Multi-dimensional statistics (Daily/3-Day/Weekly/Monthly)
+- 💾 Local data persistence
+- 🚀 Lightweight and high-performance
+- 🖥️ Elegant user interface
+- 🔄 Auto-start support
+
+## 🖥️ Screenshots
+
+![UI Preview](assets/chart_data.png)
+![UI Preview](assets/detail_data.png)
+![UI Preview](assets/button.png)
+
+## 📦 Installation
+
+Download the latest version from the [Releases](https://github.com/yourusername/time-whisper/releases) page.
+
+Currently supporting:
+- Windows (.exe)
+- macOS (.dmg) - Coming soon
+- Linux (.AppImage) - Coming soon
+
+## 🚀 Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (>= 16)
+- [Rust](https://www.rust-lang.org/) (>= 1.70)
+- [VS Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (Windows)
+
+### Setting Up Development Environment
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/yourusername/time-whisper.git
+cd time-whisper
+
+# Install dependencies
+npm install
+
+# Start development server
+cargo tauri dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Building
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Build production version
+cargo tauri build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+- **Frontend**
+  - Next.js
+  - React
+  - TypeScript
+  - Tailwind CSS
+  - shadcn/ui
+  - Recharts
 
-To learn more about Next.js, take a look at the following resources:
+- **Backend**
+  - Rust
+  - Tauri
+  - SQLite
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 Implemented Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [x] Real-time application monitoring
+- [x] Multi-dimensional time statistics
+- [x] Data persistence
+- [x] Auto-start management
+- [x] Chart/Table data visualization
+- [ ] Data export functionality
+- [ ] Multi-language support
+- [ ] Cloud synchronization
+- [ ] More platform support
 
-## Deploy on Vercel
+## 🤝 Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+For issues or suggestions:
+- Create an [Issue](https://github.com/yourusername/time-whisper/issues)
+- Email us at [your-email@example.com](u7541840@gmail.com)
+
+---
+
+<p align="center">Made with ❤️ by [Harrison]</p>
+
+## 🏗️ Project Structure
+
+```
+project-root/
+├── src-tauri/                     # Rust backend
+│   ├── src/
+│   │   ├── main.rs               # Main entry and Tauri commands
+│   │   ├── platform/             # Cross-platform implementation
+│   │   │   ├── mod.rs           # Platform abstraction layer
+│   │   │   └── windows.rs        # Windows implementation
+│   │   └── db/                   # Data management
+│   │       ├── mod.rs           # Module exports
+│   │       ├── storage.rs        # SQLite storage
+│   │       └── types.rs          # Data types
+│   └── Cargo.toml                # Rust dependencies
+│
+├── src/                          # Frontend code
+│   ├── app/                      # Next.js pages
+│   │   ├── page.tsx             # Main page
+│   │   └── layout.tsx           # App layout
+│   │
+│   ├── components/              # React components
+│   │   └── dashboard/
+│   │       ├── UsageChart.tsx   # Chart view
+│   │       ├── UsageTable.tsx   # Detailed data view
+│   │       └── AutoStart.tsx    # Auto-start settings
+│   │
+│   └── lib/                     # Utilities and types
+│       ├── processName.ts       # Process name handling
+│       └── types.ts             # TypeScript types
+│
+├── package.json                 # Frontend dependencies
+└── tailwind.config.js          # Tailwind configuration
+```
+
+## ⚡ Core Modules
+
+### Backend (Rust)
+- Window activity monitoring
+- Data persistence layer
+- Auto-start management
+- Real-time data updates
+
+### Frontend (React)
+- Real-time data visualization
+- Multi-dimensional statistics
+- Interactive data tables
+- System settings management
+
+Need any clarification or additional details?
