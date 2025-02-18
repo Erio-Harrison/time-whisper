@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Clock, Moon, Sun } from 'lucide-react';
+import { Clock, Moon, Sun, Leaf, Activity } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatProcessName } from '../../lib/processName';
@@ -22,10 +22,10 @@ type UsageData = {
 }
 
 const TIME_RANGES = [
-  { id: 'daily', label: '今日', icon: Sun },
-  { id: '3days', label: '近三天', icon: Clock },
-  { id: 'weekly', label: '本周', icon: Clock },
-  { id: 'monthly', label: '本月', icon: Moon },
+  { id: 'daily', label: '今日', icon: Sun, desc: '晨光熹微' },
+  { id: '3days', label: '近三天', icon: Activity, desc: '光影瞬息' },
+  { id: 'weekly', label: '本周', icon: Leaf, desc: '叶落知时' },
+  { id: 'monthly', label: '本月', icon: Moon, desc: '月光如水' },
 ];
 
 const TimeRangeBadge = ({ range }: { range: string }) => {
@@ -34,20 +34,28 @@ const TimeRangeBadge = ({ range }: { range: string }) => {
   
   const Icon = timeRange.icon;
   return (
-    <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm">
-      <Icon className="w-4 h-4 mr-1" />
-      <span className="font-medium">{timeRange.label}</span>
+    <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100/80 
+                    text-yellow-700/70 text-sm shadow-inner">
+      <Icon className="w-4 h-4 mr-2" />
+      <div className="flex flex-col items-start">
+        <span className="font-serif">{timeRange.label}</span>
+        <span className="text-xs opacity-70">{timeRange.desc}</span>
+      </div>
     </div>
   );
 };
 
 const LoadingState = () => (
-  <div className="flex flex-col items-center justify-center py-12">
-    <div className="w-16 h-16 relative">
-      <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-      <div className="absolute inset-0 border-4 border-t-amber-500 rounded-full animate-spin"></div>
+  <div className="flex flex-col items-center justify-center py-16">
+    <div className="w-20 h-20 relative">
+      <div className="absolute inset-0 border-4 border-yellow-100 rounded-full"></div>
+      <div className="absolute inset-0 border-4 border-t-yellow-700/30 rounded-full animate-spin 
+                    shadow-lg"></div>
+      <div className="absolute -top-2 -right-2">
+        <Leaf className="w-6 h-6 text-yellow-700/30 animate-pulse" />
+      </div>
     </div>
-    <p className="mt-4 text-gray-500 font-serif">数据加载中...</p>
+    <p className="mt-6 text-zinc-500 font-serif">正在寻觅时光的痕迹...</p>
   </div>
 );
 
@@ -77,7 +85,7 @@ export function StyledUsageTable() {
         [range]: formattedData
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取数据失败');
+      setError(err instanceof Error ? err.message : '时光追寻迷失了方向...');
       console.error('Failed to fetch data:', err);
     } finally {
       setLoading(null);
@@ -89,16 +97,17 @@ export function StyledUsageTable() {
   }, []);
 
   return (
-    <Card className="bg-gradient-to-br from-gray-50 to-white">
+    <Card className="bg-gradient-to-br from-zinc-50 to-white relative overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-amber-50">
-            <Clock className="h-5 w-5 text-amber-500" />
+          <div className="p-2 rounded-full bg-yellow-50 shadow-inner">
+            <Activity className="h-5 w-5 text-yellow-700/50" />
           </div>
-          <span className="font-serif">使用时长详情</span>
+          <span className="font-serif text-zinc-700">时光痕迹详录</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="relative">
         <Tabs 
           value={activeRange} 
           className="w-full"
@@ -109,14 +118,26 @@ export function StyledUsageTable() {
             }
           }}
         >
-          <TabsList className="grid w-full grid-cols-4 p-1 bg-gray-100/80 backdrop-blur rounded-xl">
+          <TabsList className="grid w-full grid-cols-4 p-1.5 bg-zinc-100/80 backdrop-blur-sm rounded-full shadow-inner">
             {TIME_RANGES.map((range) => (
               <TabsTrigger 
                 key={range.id} 
                 value={range.id}
-                className="data-[state=active]:bg-white data-[state=active]:text-amber-600 
-                         data-[state=active]:shadow-md rounded-lg transition-all duration-200
-                         py-2 px-4"
+                className={`
+                  data-[state=active]:bg-white 
+                  data-[state=active]:text-yellow-700/70 
+                  data-[state=active]:shadow-md 
+                  rounded-full 
+                  transition-all 
+                  duration-300
+                  py-2.5 
+                  px-4 
+                  font-serif
+                  text-zinc-600 
+                  hover:text-yellow-700/50
+                  focus:outline-none
+                  focus:ring-0
+                `}
               >
                 <range.icon className="w-4 h-4 mr-2" />
                 {range.label}
@@ -129,70 +150,92 @@ export function StyledUsageTable() {
               {loading === range.id ? (
                 <LoadingState />
               ) : error ? (
-                <div className="text-red-500 text-center py-8 bg-red-50 rounded-lg">
+                <div className="text-yellow-700/70 text-center py-12 bg-yellow-50/50 rounded-xl 
+                              border border-yellow-100 font-serif">
                   {error}
                 </div>
               ) : timeRangeData[range.id] ? (
-                <div className="rounded-xl overflow-hidden border bg-white">
+                <div className="rounded-xl overflow-hidden border border-yellow-100/50 bg-white/80 
+                              backdrop-blur-sm shadow-inner">
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gradient-to-r from-gray-50 to-white">
+                    <table className="min-w-full divide-y divide-yellow-100">
+                      <thead className="bg-gradient-to-r from-yellow-50/50 to-white/50">
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            应用名称
+                          <th className="px-6 py-4 text-left text-xs font-serif text-zinc-500 
+                                     uppercase tracking-wider">
+                            应用映像
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            使用时长
+                          <th className="px-6 py-4 text-left text-xs font-serif text-zinc-500 
+                                     uppercase tracking-wider">
+                            驻留时光
                           </th>
-                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-4 text-right text-xs font-serif text-zinc-500 
+                                     uppercase tracking-wider">
                             <TimeRangeBadge range={range.id} />
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-yellow-100/50">
                         {timeRangeData[range.id]?.slice(0, 10).map((app, index) => (
                           <tr 
                             key={app.processName}
                             className={`
-                              hover:bg-gray-50 transition-colors duration-150
-                              ${index < 3 ? 'bg-amber-50/30' : 'bg-white'}
+                              group hover:bg-yellow-50/30 transition-all duration-300
+                              ${index < 3 ? 'bg-yellow-50/20' : 'bg-white/80'}
                             `}
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center space-x-3">
                                 <div className={`
-                                  w-8 h-8 rounded-xl flex items-center justify-center
-                                  ${index < 3 ? 'bg-gradient-to-br from-amber-100 to-amber-200' : 'bg-gray-100'}
+                                  w-10 h-10 rounded-xl flex items-center justify-center
+                                  relative overflow-hidden transition-all duration-300
+                                  ${index < 3 
+                                    ? 'bg-gradient-to-br from-yellow-100/80 to-yellow-200/60 shadow-inner' 
+                                    : 'bg-zinc-100/80'
+                                  }
                                 `}>
-                                  <span className="text-sm font-serif">
+                                  <div className="absolute inset-0 opacity-5">
+                                    {[...Array(5)].map((_, i) => (
+                                      <div
+                                        key={i}
+                                        className="absolute h-px w-full bg-yellow-900/20"
+                                        style={{ top: `${i * 4}px` }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-sm font-serif text-yellow-800/70 relative z-10">
                                     {app.name.charAt(0)}
                                   </span>
+                                  {index < 3 && (
+                                    <div className="absolute -top-1 -right-1 w-5 h-5 
+                                                  bg-gradient-to-br from-yellow-100 to-yellow-200
+                                                  rounded-full flex items-center justify-center shadow-lg">
+                                      <Leaf className="w-3 h-3 text-yellow-700/70" />
+                                    </div>
+                                  )}
                                 </div>
                                 <div>
-                                  <div className="text-sm font-medium text-gray-700">
+                                  <div className="text-sm font-serif text-zinc-700">
                                     {app.name}
                                   </div>
                                   {index < 3 && (
-                                    <div className="text-xs text-amber-600">
-                                      Top {index + 1}
+                                    <div className="text-xs text-yellow-700/70 font-serif">
+                                      时光印记 #{index + 1}
                                     </div>
                                   )}
-                                  <div className="text-xs text-gray-400">
-                                    {app.processName}
-                                  </div>
                                 </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center space-x-2">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
+                                <Sun className="w-4 h-4 text-yellow-600/40" />
+                                <span className="text-sm text-zinc-600 font-serif">
                                   {app.hours} 小时
                                 </span>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-zinc-500 font-serif">
                                 {app.minutes} 分钟
                               </div>
                             </td>

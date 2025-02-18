@@ -1,8 +1,6 @@
-"use client"
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Clock, Star, Activity } from 'lucide-react';
+import { Clock, Leaf, Sun } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 type UsageData = {
@@ -12,15 +10,14 @@ type UsageData = {
   processName: string;
 };
 
-// 生成渐变色
-const generateGradientColor = (str: string) => {
+const generateNatureColor = (str: string) => {
   const hash = str.split('').reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
-  const hue = hash % 360;
+  const hue = 15 + (hash % 30);
   return {
-    start: `hsl(${hue}, 70%, 85%)`,
-    end: `hsl(${hue}, 70%, 65%)`
+    start: `hsl(${hue}, 40%, 90%)`,
+    end: `hsl(${hue}, 35%, 80%)`
   };
 };
 
@@ -29,20 +26,35 @@ const AppIcon = ({ name, rank }: { name: string; rank: number }) => {
     name.charAt(0) : 
     name.charAt(0).toUpperCase();
 
-  const gradientColors = generateGradientColor(name);
+  const gradientColors = generateNatureColor(name);
   
   return (
     <div className={`
-      relative w-8 h-8 rounded-xl 
+      relative w-10 h-10 rounded-xl 
       flex items-center justify-center 
-      bg-gradient-to-br from-amber-100 to-amber-200
-      shadow-lg
-      ${rank <= 3 ? 'ring-2 ring-amber-200 ring-opacity-50' : ''}
+      bg-gradient-to-br from-yellow-50 to-yellow-100/80
+      shadow-inner overflow-hidden
+      transition-all duration-300
+      ${rank <= 3 ? 'ring-2 ring-yellow-700/20' : ''}
     `}>
-      <span className="text-sm font-serif text-gray-700">{firstChar}</span>
+      <div className="absolute inset-0 opacity-5">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute h-px w-full bg-yellow-900/20"
+            style={{ top: `${i * 4}px` }}
+          />
+        ))}
+      </div>
+      
+      <span className="text-sm font-serif text-yellow-800/70 relative z-10">
+        {firstChar}
+      </span>
+      
       {rank <= 3 && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-          <Star className="w-3 h-3 text-white" />
+        <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-yellow-100 to-yellow-200 
+                       rounded-full flex items-center justify-center shadow-lg">
+          <Leaf className="w-3 h-3 text-yellow-700/70" />
         </div>
       )}
     </div>
@@ -59,10 +71,12 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
     
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x="-160" y="-16" width="140" height="32">
-          <div className="flex items-center space-x-3 h-full">
+        <foreignObject x="-160" y="-20" width="140" height="40">
+          <div className="flex items-center space-x-3 h-full group">
             <AppIcon name={app.name} rank={rank} />
-            <span className="text-sm font-medium text-gray-600 truncate">{app.name}</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-serif text-zinc-600 truncate">{app.name}</span>
+            </div>
           </div>
         </foreignObject>
       </g>
@@ -75,21 +89,27 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
       const rank = sortedData.findIndex(item => item.name === app.name) + 1;
       
       return (
-        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <AppIcon name={app.name} rank={rank} />
-              <div>
-                <p className="font-medium text-gray-900">{app.name}</p>
-                <p className="text-sm text-gray-500">排名 #{rank}</p>
-              </div>
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
+          <CardContent className="p-4 relative">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 to-transparent"></div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>{app.hours} 小时</span>
-                <span className="text-gray-300">|</span>
-                <span>{app.minutes} 分钟</span>
+            
+            <div className="relative z-10">
+              <div className="flex items-center space-x-3">
+                <AppIcon name={app.name} rank={rank} />
+                <div>
+                  <p className="font-serif text-zinc-800">{app.name}</p>
+                  <p className="text-sm text-zinc-500 font-serif">时光痕迹 #{rank}</p>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-yellow-100">
+                <div className="flex items-center space-x-2 text-sm text-zinc-600">
+                  <Sun className="w-4 h-4 text-yellow-600/50" />
+                  <span className="font-serif">{app.hours} 小时</span>
+                  <span className="text-yellow-200">|</span>
+                  <span className="font-serif">{app.minutes} 分钟</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -100,19 +120,35 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
   };
 
   return (
-    <Card className="bg-gradient-to-br from-gray-50 to-white">
-      <CardContent className="p-6">
+    <Card className="bg-gradient-to-br from-zinc-50 to-white relative overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_var(--tw-gradient-stops))] from-black to-transparent"></div>
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-16 h-16 rounded-full bg-black/5"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              transform: `rotate(${Math.random() * 360}deg)`,
+              animation: `drift${i} 15s infinite ease-in-out`,
+            }}
+          />
+        ))}
+      </div>
+
+      <CardContent className="p-6 relative">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-blue-50">
-              <Activity className="h-5 w-5 text-blue-500" />
+            <div className="p-2 rounded-xl bg-yellow-50 shadow-inner">
+              <Sun className="h-5 w-5 text-yellow-700/50" />
             </div>
-            <h2 className="text-xl font-serif text-gray-800">使用时长排行</h2>
+            <h2 className="text-xl font-serif text-zinc-700">时光印记</h2>
           </div>
         </div>
 
-        <div className="rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white border shadow-inner">
-          <ResponsiveContainer width="100%" height={Math.max(400, data.length * 60)}>
+        <div className="rounded-xl p-6 bg-gradient-to-br from-zinc-50/50 to-white/50 border shadow-inner backdrop-blur-[1px]">
+          <ResponsiveContainer width="100%" height={Math.max(400, data.length * 65)}>
             <BarChart
               data={sortedData}
               layout="vertical"
@@ -120,8 +156,8 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
             >
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#d6b392" />
-                  <stop offset="100%" stopColor="#eac7a8" />
+                  <stop offset="0%" stopColor="#d4b08c" />
+                  <stop offset="100%" stopColor="#e2c4a8" />
                 </linearGradient>
               </defs>
               <CartesianGrid 
@@ -132,7 +168,7 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
               <XAxis
                 type="number"
                 tickFormatter={(value) => `${(value / 60).toFixed(1)}h`}
-                tick={{ fill: '#666', fontSize: 12 }}
+                tick={{ fill: '#666', fontSize: 12, fontFamily: 'serif' }}
                 stroke="#e5e7eb"
               />
               <YAxis
@@ -150,7 +186,7 @@ export function StyledUsageChart({ data }: { data: UsageData[] }) {
                 dataKey="minutes"
                 radius={[4, 4, 4, 4]}
                 fill="url(#barGradient)"
-                barSize={28}
+                barSize={32}
               />
             </BarChart>
           </ResponsiveContainer>
