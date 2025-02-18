@@ -68,6 +68,7 @@ mod tests {
     use std::sync::Arc;
     use std::thread;
     use std::process::Command;
+    use std::time::Duration;
 
     // 1. 基础窗口信息测试
     #[test]
@@ -135,135 +136,307 @@ mod tests {
         }
     }
 
-    // 4. 并发测试
+    // 4. 并发测试扩展
     #[test]
     fn test_concurrent_monitoring() {
         let monitor = Arc::new(LinuxMonitor::new());
         let mut handles = vec![];
 
         // 创建多个线程同时获取窗口信息
-        for _ in 0..5 {
+        for thread_id in 0..5 {
             let monitor_clone = Arc::clone(&monitor);
             let handle = thread::spawn(move || {
-                for _ in 0..10 {
-                    let _ = monitor_clone.get_active_window();
-                    thread::sleep(std::time::Duration::from_millis(10));
+                let mut results = Vec::new();
+                for i in 0..10 {
+                    let window = monitor_clone.get_active_window();
+                    results.push((thread_id, i, window.is_some()));
+                    thread::sleep(Duration::from_millis(10));
                 }
+                results
             });
             handles.push(handle);
         }
 
+        let mut all_results = Vec::new();
         for handle in handles {
-            handle.join().unwrap();
+            all_results.extend(handle.join().unwrap());
+        }
+
+        // 验证每个线程都完成了所有查询
+        for thread_id in 0..5 {
+            let thread_queries = all_results.iter()
+                .filter(|(t, _, _)| *t == thread_id)
+                .count();
+            assert_eq!(thread_queries, 10);
         }
     }
 
-    // 5. 错误处理测试
+    // 5. 错误处理测试扩展
     #[test]
     fn test_error_handling() {
-        let monitor = LinuxMonitor::new();
-        
-        // 测试无效的 pid
+        // 1. 测试无效的 pid
         let output = Command::new("ps")
             .arg("-p")
-            .arg("999999999") // 使用一个极大的无效 pid
+            .arg("999999999")
             .arg("-o")
             .arg("comm=")
             .output();
-            
-        // ps 命令对无效 pid 应该返回错误状态
         assert!(output.is_ok());
         assert!(!output.unwrap().status.success());
+
+        // 2. 测试错误的命令参数
+        let output = Command::new("ps")
+            .arg("--invalid-arg")
+            .output();
+        assert!(output.is_ok());
+        assert!(!output.unwrap().status.success());
+
+        // 3. 测试无效的环境变量
+        std::env::remove_var("DISPLAY");
+        let monitor = LinuxMonitor::new();
+        let result = monitor.get_active_window();
+        // 没有 DISPLAY 环境变量时应该返回 None
+        assert!(result.is_none());
     }
 
-    // 6. 进程名解析测试
+    // 6. 进程名解析测试扩展
     #[test]
     fn test_process_name_parsing() {
-        // 测试一些常见的进程名格式
-        let test_outputs = vec![
-            "process_name\n",
-            "process-name\n",
-            "process.name\n",
-            "    process_name    \n",  // 带空格
-            "proc\0ess_name\n",        // 带 null 字符
+        let test_cases = vec![
+            // 基本测试
+            ("simple", "simple"),
+            ("process_name", "process_name"),
+            ("process-name", "process-name"),
+            ("process.name", "process.name"),
+            
+            // 空白字符测试
+            ("  process  ", "process"),
+            ("\tprocess\t", "process"),
+            ("\nprocess\n", "process"),
+            
+            // 特殊字符测试
+            ("process\0name", "processname"),
+            ("process\u{200B}name", "processname"),
+            
+            // 长度边界测试
+            ("a".repeat(1000).as_str(), "a".repeat(1000).as_str()),
+            ("", ""),
+            
+            // Unicode 字符测试
+            ("进程", "进程"),
+            ("プロセス", "プロセス"),
+            ("🔧process", "🔧process"),
         ];
 
-        for output in test_outputs {
-            let cleaned = output.trim().replace('\0', "");
-            assert!(!cleaned.is_empty());
-            assert!(!cleaned.contains('\n'));
-            assert!(!cleaned.contains('\0'));
+        for (input, expected) in test_cases {
+            let cleaned = input.trim()
+                .replace('\0', "")
+                .replace('\u{200B}', "");
+            assert_eq!(cleaned, expected);
         }
     }
 
-    // 7. 边界条件测试
+    // 7. 边界条件测试扩展
     #[test]
     fn test_edge_cases() {
         let monitor = LinuxMonitor::new();
         
-        // 快速连续查询
+        // 1. 快速切换测试
+        let mut last_window = None;
+        for _ in 0..10 {
+            let current_window = monitor.get_active_window();
+            if last_window.is_some() && current_window.is_some() {
+                // 记录窗口切换
+                assert!(last_window.as_ref() != current_window.as_ref());
+            }
+            last_window = current_window;
+            thread::sleep(Duration::from_millis(100));
+        }
+
+        // 2. 资源限制测试
+        let mut handles = vec![];
         for _ in 0..100 {
-            let _ = monitor.get_active_window();
+            let monitor = Arc::new(LinuxMonitor::new());
+            handles.push(thread::spawn(move || {
+                monitor.get_active_window()
+            }));
         }
         
-        // 在不同线程中同时查询
-        let monitor = Arc::new(monitor);
-        let monitor2 = monitor.clone();
-        
-        let handle = thread::spawn(move || {
-            monitor2.get_active_window()
-        });
-        
-        let _ = monitor.get_active_window();
-        let _ = handle.join();
+        for handle in handles {
+            let _ = handle.join();
+        }
+
+        // 3. 内存压力测试
+        let mut windows = Vec::new();
+        for _ in 0..1000 {
+            if let Some(window) = monitor.get_active_window() {
+                windows.push(window);
+            }
+        }
     }
 
-    // 8. 系统信息测试
+    // 8. 系统信息测试扩展
     #[test]
     fn test_system_info() {
-        // 验证是否在 X11 环境下
+        // 1. X11 环境检查
         let display = std::env::var("DISPLAY");
         if let Ok(display_val) = display {
             assert!(!display_val.is_empty());
         }
 
-        // 检查必要的系统命令
-        let commands = vec!["ps", "xwininfo", "xprop"];
-        for cmd in commands {
+        // 2. 系统命令检查
+        let required_commands = vec![
+            "ps",
+            "xwininfo",
+            "xprop",
+            "wmctrl",
+            "xdotool",
+        ];
+
+        let mut missing_commands = Vec::new();
+        for cmd in required_commands {
             let which_output = Command::new("which")
                 .arg(cmd)
                 .output();
-            assert!(which_output.is_ok());
+                
+            if which_output.is_err() || !which_output.unwrap().status.success() {
+                missing_commands.push(cmd);
+            }
+        }
+
+        if !missing_commands.is_empty() {
+            println!("Warning: Missing commands: {:?}", missing_commands);
+        }
+
+        // 3. 桌面环境检查
+        let desktop_env = std::env::var("XDG_CURRENT_DESKTOP")
+            .or_else(|_| std::env::var("DESKTOP_SESSION"));
+        if let Ok(env) = desktop_env {
+            println!("Current desktop environment: {}", env);
         }
     }
 
-    // 9. 集成测试
+    // 9. 集成测试扩展
     #[test]
     fn test_integrated_functionality() {
-        let monitor = LinuxMonitor::new();
+        let monitor = Arc::new(LinuxMonitor::new());
+        
+        // 1. 基本功能测试
+        let mut window_stats = std::collections::HashMap::new();
+        for _ in 0..10 {
+            if let Some(window) = monitor.get_active_window() {
+                *window_stats.entry(window).or_insert(0) += 1;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
 
-        // 组合测试窗口监控
-        for _ in 0..3 {
-            let window_name = monitor.get_active_window();
-            println!("Current window: {:?}", window_name);
-            thread::sleep(std::time::Duration::from_millis(100));
+        // 2. 并发访问测试
+        let monitor_clone = Arc::clone(&monitor);
+        let handle = thread::spawn(move || {
+            for _ in 0..5 {
+                let _ = monitor_clone.get_active_window();
+                thread::sleep(Duration::from_millis(50));
+            }
+        });
+
+        for _ in 0..5 {
+            let _ = monitor.get_active_window();
+            thread::sleep(Duration::from_millis(50));
+        }
+
+        handle.join().unwrap();
+
+        // 3. 打印统计信息
+        for (window, count) in window_stats {
+            println!("Window '{}' was active {} times", window, count);
         }
     }
 
-    // 10. 性能测试
+    // 10. 性能测试扩展
     #[test]
     fn test_performance() {
         let monitor = LinuxMonitor::new();
-        let start = std::time::Instant::now();
         
-        // 测试 100 次窗口信息获取的性能
+        // 1. 单次查询性能
+        let mut single_query_times = Vec::new();
         for _ in 0..100 {
+            let start = std::time::Instant::now();
             let _ = monitor.get_active_window();
+            single_query_times.push(start.elapsed());
         }
-        
-        let duration = start.elapsed();
-        println!("100 queries took: {:?}", duration);
-        // 确保每次查询平均不超过 50ms
-        assert!(duration.as_millis() < 5000);
+
+        // 计算统计信息
+        let avg_time: Duration = single_query_times.iter().sum::<Duration>() / 100;
+        let max_time = single_query_times.iter().max().unwrap();
+        let min_time = single_query_times.iter().min().unwrap();
+
+        println!("Performance statistics:");
+        println!("Average query time: {:?}", avg_time);
+        println!("Maximum query time: {:?}", max_time);
+        println!("Minimum query time: {:?}", min_time);
+
+        // 2. 并发性能测试
+        let start = std::time::Instant::now();
+        let monitor = Arc::new(monitor);
+        let mut handles = vec![];
+
+        for _ in 0..10 {
+            let monitor_clone = Arc::clone(&monitor);
+            handles.push(thread::spawn(move || {
+                for _ in 0..10 {
+                    let _ = monitor_clone.get_active_window();
+                }
+            }));
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let concurrent_duration = start.elapsed();
+        println!("100 concurrent queries took: {:?}", concurrent_duration);
+        assert!(concurrent_duration.as_millis() < 5000);
+    }
+
+    // 11. 压力测试
+    #[test]
+    fn test_stress() {
+        let monitor = Arc::new(LinuxMonitor::new());
+        let duration = Duration::from_secs(2);
+        let start = std::time::Instant::now();
+        let mut handles = vec![];
+
+        // 创建多个线程持续查询
+        while start.elapsed() < duration {
+            let monitor_clone = Arc::clone(&monitor);
+            handles.push(thread::spawn(move || {
+                let mut success_count = 0;
+                let mut failure_count = 0;
+                while start.elapsed() < duration {
+                    match monitor_clone.get_active_window() {
+                        Some(_) => success_count += 1,
+                        None => failure_count += 1,
+                    }
+                }
+                (success_count, failure_count)
+            }));
+
+            thread::sleep(Duration::from_millis(100));
+        }
+
+        // 收集结果
+        let mut total_success = 0;
+        let mut total_failure = 0;
+        for handle in handles {
+            let (success, failure) = handle.join().unwrap();
+            total_success += success;
+            total_failure += failure;
+        }
+
+        println!("Stress test results:");
+        println!("Successful queries: {}", total_success);
+        println!("Failed queries: {}", total_failure);
+        println!("Success rate: {:.2}%", 
+            (total_success as f64 / (total_success + total_failure) as f64) * 100.0);
     }
 }

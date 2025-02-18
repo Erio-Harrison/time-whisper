@@ -91,9 +91,6 @@ impl AutoStart for Windows {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::sync::Mutex;
-    use std::collections::HashMap;
     use std::sync::Arc;
     use std::thread;
 
