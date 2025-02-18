@@ -21,15 +21,6 @@ TimeWhisper helps you understand your application usage habits by providing clea
 ![UI Preview](assets/detail_data.png)
 ![UI Preview](assets/button.png)
 
-## 📦 Installation
-
-Download the latest version from the [Releases](https://github.com/yourusername/time-whisper/releases) page.
-
-Currently supporting:
-- Windows (.exe)
-- macOS (.dmg) - Coming soon
-- Linux (.AppImage) - Coming soon
-
 ## 🚀 Development
 
 ### Prerequisites
@@ -42,7 +33,7 @@ Currently supporting:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/time-whisper.git
+git clone https://github.com/Erio-Harrison/time-whisper.git
 cd time-whisper
 
 # Install dependencies

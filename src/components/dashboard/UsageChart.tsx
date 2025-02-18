@@ -1,7 +1,9 @@
-// src/components/dashboard/UsageChart.tsx
-import React, { useMemo } from 'react';
+"use client"
+
+import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Clock } from 'lucide-react';
+import { Clock, Star, Activity } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 type UsageData = {
   name: string;
@@ -10,49 +12,57 @@ type UsageData = {
   processName: string;
 };
 
-const generateColorFromString = (str: string) => {
+// 生成渐变色
+const generateGradientColor = (str: string) => {
   const hash = str.split('').reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
-  return `hsl(${hash % 360}, 70%, 50%)`;
+  const hue = hash % 360;
+  return {
+    start: `hsl(${hue}, 70%, 85%)`,
+    end: `hsl(${hue}, 70%, 65%)`
+  };
 };
 
-const LetterIcon = ({ name, color }: { name: string; color: string }) => {
-  // 对于中文名称，使用第一个字；对于英文名称，使用第一个字母
+const AppIcon = ({ name, rank }: { name: string; rank: number }) => {
   const firstChar = name.match(/^[\u4e00-\u9fa5]/) ? 
     name.charAt(0) : 
     name.charAt(0).toUpperCase();
 
+  const gradientColors = generateGradientColor(name);
+  
   return (
-    <div 
-      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-medium"
-      style={{ backgroundColor: color }}
-    >
-      {firstChar}
+    <div className={`
+      relative w-8 h-8 rounded-xl 
+      flex items-center justify-center 
+      bg-gradient-to-br from-amber-100 to-amber-200
+      shadow-lg
+      ${rank <= 3 ? 'ring-2 ring-amber-200 ring-opacity-50' : ''}
+    `}>
+      <span className="text-sm font-serif text-gray-700">{firstChar}</span>
+      {rank <= 3 && (
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+          <Star className="w-3 h-3 text-white" />
+        </div>
+      )}
     </div>
   );
 };
 
-export function UsageChart({ data }: { data: UsageData[] }) {
+export function StyledUsageChart({ data }: { data: UsageData[] }) {
   const sortedData = [...data].sort((a, b) => b.minutes - a.minutes);
-
-  const iconColors = useMemo(() => {
-    return sortedData.reduce((acc, app) => {
-      acc[app.name] = generateColorFromString(app.name);
-      return acc;
-    }, {} as Record<string, string>);
-  }, [sortedData]);
 
   const CustomYAxisTick = ({ x, y, payload }: any) => {
     const app = sortedData.find(item => item.name === payload.value);
+    const rank = sortedData.findIndex(item => item.name === payload.value) + 1;
     if (!app) return null;
     
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x="-140" y="-12" width="120" height="24">
-          <div className="flex items-center space-x-2 h-full">
-            <LetterIcon name={app.name} color={iconColors[app.name]} />
-            <span className="text-sm text-gray-700 truncate">{app.name}</span>
+        <foreignObject x="-160" y="-16" width="140" height="32">
+          <div className="flex items-center space-x-3 h-full">
+            <AppIcon name={app.name} rank={rank} />
+            <span className="text-sm font-medium text-gray-600 truncate">{app.name}</span>
           </div>
         </foreignObject>
       </g>
@@ -62,69 +72,90 @@ export function UsageChart({ data }: { data: UsageData[] }) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const app = payload[0].payload;
+      const rank = sortedData.findIndex(item => item.name === app.name) + 1;
+      
       return (
-        <div className="bg-white border shadow-lg rounded-lg p-3">
-          <div className="flex items-center space-x-2">
-            <LetterIcon name={app.name} color={iconColors[app.name]} />
-            <p className="font-medium text-gray-900">{app.name}</p>
-          </div>
-          <div className="mt-2 text-sm text-gray-600">
-            <p className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              {`${app.hours} 小时 (${app.minutes} 分钟)`}
-            </p>
-          </div>
-        </div>
+        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <AppIcon name={app.name} rank={rank} />
+              <div>
+                <p className="font-medium text-gray-900">{app.name}</p>
+                <p className="text-sm text-gray-500">排名 #{rank}</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Clock className="w-4 h-4" />
+                <span>{app.hours} 小时</span>
+                <span className="text-gray-300">|</span>
+                <span>{app.minutes} 分钟</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       );
     }
     return null;
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <div className="flex items-center space-x-2 mb-6">
-        <Clock className="h-6 w-6 text-blue-500" />
-        <h2 className="text-xl font-semibold text-gray-800">应用使用时长统计</h2>
-      </div>
+    <Card className="bg-gradient-to-br from-gray-50 to-white">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-blue-50">
+              <Activity className="h-5 w-5 text-blue-500" />
+            </div>
+            <h2 className="text-xl font-serif text-gray-800">使用时长排行</h2>
+          </div>
+        </div>
 
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <ResponsiveContainer width="100%" height={Math.max(400, data.length * 50)}>
-          <BarChart
-            data={sortedData}
-            layout="vertical"
-            margin={{ top: 10, right: 30, left: 150, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis
-              type="number"
-              tickFormatter={(value) => `${(value / 60).toFixed(1)}h`}
-              tick={{ fill: '#666', fontSize: 12 }}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tick={<CustomYAxisTick />}
-              width={140}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar
-              dataKey="minutes"
-              radius={[0, 4, 4, 0]}
-              fill="url(#colorGradient)"
-              barSize={24}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-
-        <svg style={{ height: 0 }}>
-          <defs>
-            <linearGradient id="colorGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#3b82f6" />
-              <stop offset="100%" stopColor="#60a5fa" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-    </div>
+        <div className="rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white border shadow-inner">
+          <ResponsiveContainer width="100%" height={Math.max(400, data.length * 60)}>
+            <BarChart
+              data={sortedData}
+              layout="vertical"
+              margin={{ top: 10, right: 30, left: 160, bottom: 10 }}
+            >
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#d6b392" />
+                  <stop offset="100%" stopColor="#eac7a8" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                horizontal={false} 
+                stroke="#f0f0f0" 
+              />
+              <XAxis
+                type="number"
+                tickFormatter={(value) => `${(value / 60).toFixed(1)}h`}
+                tick={{ fill: '#666', fontSize: 12 }}
+                stroke="#e5e7eb"
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={<CustomYAxisTick />}
+                width={160}
+                stroke="#e5e7eb"
+              />
+              <Tooltip 
+                content={<CustomTooltip />}
+                cursor={{ fill: '#f8fafc', opacity: 0.5 }}
+              />
+              <Bar
+                dataKey="minutes"
+                radius={[4, 4, 4, 4]}
+                fill="url(#barGradient)"
+                barSize={28}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
