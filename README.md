@@ -89,7 +89,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues or suggestions:
 - Create an [Issue](https://github.com/yourusername/time-whisper/issues)
-- Email us at [your-email@example.com](u7541840@gmail.com)
 
 ---
 
